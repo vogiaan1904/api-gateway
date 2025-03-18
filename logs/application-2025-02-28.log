@@ -1,0 +1,4 @@
+2025-02-28 12:28:13 [32minfo[39m: [HTTP] [32mIncoming POST /auth/register[39m
+2025-02-28 12:28:13 [32minfo[39m: [HTTP] [32mPOST /auth/register 201 - 244ms[39m
+2025-02-28 12:31:01 [32minfo[39m: [HTTP] [32mIncoming POST /auth/login[39m
+2025-02-28 12:31:01 [32minfo[39m: [HTTP] [32mPOST /auth/login 201 - 266ms[39m
