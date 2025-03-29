@@ -29,14 +29,14 @@ export class JwtAccessTokenGuard implements CanActivate {
 
     const token: string = parts[1];
 
-    const { status, userId }: ValidateResponse =
+    const { status, userId, role }: ValidateResponse =
       await this.service.validate(token);
 
     if (status !== Number(HttpStatus.OK)) {
       throw new UnauthorizedException();
     }
 
-    req.user = { id: userId };
+    req.user = { id: userId, role: role };
 
     return true;
   }

@@ -15,7 +15,7 @@ import { GrpcLoggingInterceptor } from 'src/interceptors/grpc-logging.intercepto
         useFactory: async (configService: ConfigService) => ({
           transport: Transport.GRPC,
           options: {
-            url: '0.0.0.0:50051',
+            url: '127.0.0.1:50051',
             package: AUTH_PACKAGE_NAME,
             protoPath: 'node_modules/grpc-nest-proto/proto/auth.proto',
             channelOptions: {

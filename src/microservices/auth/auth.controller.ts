@@ -44,7 +44,9 @@ export class AuthController implements OnModuleInit {
   private async login(
     @Body() body: LoginRequest,
   ): Promise<Observable<LoginResponse>> {
-    return this.svc.login(body);
+    const response = this.svc.login(body);
+    console.log('response', response);
+    return response;
   }
 
   @UseGuards(JwtAccessTokenGuard)

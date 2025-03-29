@@ -2,6 +2,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   AUTH_SERVICE_NAME,
   AuthServiceClient,
+  LoginRequest,
+  LoginResponse,
+  RegisterRequest,
+  RegisterResponse,
   ValidateResponse,
 } from './auth.pb';
 import { ClientGrpc } from '@nestjs/microservices';

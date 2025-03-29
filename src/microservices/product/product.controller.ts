@@ -12,11 +12,11 @@ import {
 import { ClientGrpc } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
 import {
-  FindOneResponse,
   ProductServiceClient,
   PRODUCT_SERVICE_NAME,
   CreateProductResponse,
   CreateProductRequest,
+  FindByIdResponse,
 } from './product.pb';
 import { JwtAccessTokenGuard } from '../auth/guards/jwt-access.guard';
 
@@ -42,9 +42,9 @@ export class ProductController implements OnModuleInit {
 
   @Get(':id')
   @UseGuards(JwtAccessTokenGuard)
-  private async findOne(
+  private async findById(
     @Param('id', ParseIntPipe) id: string,
-  ): Promise<Observable<FindOneResponse>> {
-    return this.svc.findOne({ id });
+  ): Promise<Observable<FindByIdResponse>> {
+    return this.svc.findById({ id });
   }
 }
