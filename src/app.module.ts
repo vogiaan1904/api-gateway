@@ -11,14 +11,12 @@ import loggingConfig from './configs/logging.config';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { TransformInterceptor } from './interceptors/api-response.interceptor';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
+import { ErrorModule } from './errors/errors.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       load: [loggingConfig],
-      validationOptions: {
-        abortEarly: false,
-      },
       isGlobal: true,
       envFilePath:
         process.env.NODE_ENV === 'development' ? '.env' : '.env.prod',
@@ -29,6 +27,7 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
     ProductModule,
     OrderModule,
     UserModule,
+    ErrorModule,
   ],
   controllers: [AppController],
   providers: [

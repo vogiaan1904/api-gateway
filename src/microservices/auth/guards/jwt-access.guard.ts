@@ -7,7 +7,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { RequestWithUser } from 'src/types';
-import { ValidateResponse } from '../auth.pb';
+import { ErrorCode, ValidateResponse } from '../auth.pb';
 import { AuthService } from '../auth.service';
 
 @Injectable()
@@ -29,11 +29,15 @@ export class JwtAccessTokenGuard implements CanActivate {
 
     const token: string = parts[1];
 
-    const { status, userId, role }: ValidateResponse =
+    const { error, userId, role }: ValidateResponse =
       await this.service.validate(token);
 
-    if (status !== Number(HttpStatus.OK)) {
-      throw new UnauthorizedException();
+    if (error.code !== ErrorCode.OK) {
+      throw new UnauthorizedException({
+        statusCode: HttpStatus.UNAUTHORIZED,
+        message: 'Invalid token',
+        error: error,
+      });
     }
 
     req.user = { id: userId, role: role };

@@ -1,15 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { ClientGrpc } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 import {
   AUTH_SERVICE_NAME,
   AuthServiceClient,
+  ErrorCode,
   LoginRequest,
-  LoginResponse,
+  RefreshTokenRequest,
   RegisterRequest,
-  RegisterResponse,
   ValidateResponse,
 } from './auth.pb';
-import { ClientGrpc } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { LoginResponseDto, RefreshTokenResponseDto } from './dtos/response.dto';
 
 @Injectable()
 export class AuthService {
@@ -24,5 +25,38 @@ export class AuthService {
 
   public async validate(token: string): Promise<ValidateResponse> {
     return firstValueFrom(this.svc.validate({ token }));
+  }
+
+  async register(body: RegisterRequest): Promise<void> {
+    const registerResp = await firstValueFrom(this.svc.register(body));
+    if (registerResp.error.code === ErrorCode.OK) {
+      return;
+    }
+  }
+
+  async login(body: LoginRequest): Promise<LoginResponseDto> {
+    const loginResp = await firstValueFrom(this.svc.login(body));
+    if (loginResp.error.code === ErrorCode.OK) {
+      return {
+        accessToken: loginResp.accessToken,
+        refreshToken: loginResp.refreshToken,
+      };
+    } else {
+      return loginResp;
+    }
+  }
+
+  async refreshToken(
+    body: RefreshTokenRequest,
+  ): Promise<RefreshTokenResponseDto> {
+    const refreshTokenResp = await firstValueFrom(this.svc.refreshToken(body));
+    if (refreshTokenResp.error.code === ErrorCode.OK) {
+      return {
+        accessToken: refreshTokenResp.accessToken,
+        refreshToken: refreshTokenResp.refreshToken,
+      };
+    } else {
+      return refreshTokenResp;
+    }
   }
 }
