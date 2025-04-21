@@ -5,6 +5,7 @@ import {
   HttpException,
   HttpStatus,
   Logger,
+  BadRequestException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
@@ -22,7 +23,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    // Default values
     let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal server error';
     let errors = null;
@@ -32,7 +32,32 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       JSON.stringify(exception, null, 2),
     );
 
-    if (exception instanceof HttpException) {
+    if (exception instanceof BadRequestException) {
+      statusCode = exception.getStatus();
+      const exceptionResponse = exception.getResponse() as any;
+
+      if (
+        exceptionResponse.message &&
+        Array.isArray(exceptionResponse.message)
+      ) {
+        message = 'Validation failed';
+        errors = exceptionResponse.message.map((error) => {
+          if (typeof error === 'object' && error.constraints) {
+            return {
+              property: error.property,
+              constraints: Object.values(error.constraints),
+            };
+          }
+          return { message: error };
+        });
+      } else {
+        message = exceptionResponse.message || 'Bad request';
+        errors = {
+          code: exceptionResponse.errorCode,
+          message: exceptionResponse.errorMessage || message,
+        };
+      }
+    } else if (exception instanceof HttpException) {
       statusCode = exception.getStatus();
       const exceptionResponse = exception.getResponse() as any;
       message = exceptionResponse.message || exception.message;
@@ -41,31 +66,25 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         message: exceptionResponse.errorMessage || message,
       };
     } else if (exception.code !== undefined) {
+      message = exception.details;
       switch (exception.code) {
         case GrpcStatus.INVALID_ARGUMENT:
           statusCode = HttpStatus.BAD_REQUEST;
-          message = 'Wrong request format';
-          errors = {
-            code: exception.code,
-            message: exception.details,
-          };
           break;
         case GrpcStatus.NOT_FOUND:
-          statusCode = HttpStatus.NOT_FOUND;
-          message = 'Resource not found';
-
+          statusCode = HttpStatus.BAD_REQUEST;
           break;
         case GrpcStatus.PERMISSION_DENIED:
           statusCode = HttpStatus.FORBIDDEN;
-          message = 'Permission denied';
+          break;
+        case GrpcStatus.UNAUTHENTICATED:
+          statusCode = HttpStatus.UNAUTHORIZED;
           break;
         default:
           statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
-          message = 'Internal server error';
       }
     }
 
-    // Log the exception details
     this.logger.error({
       timestamp: new Date().toISOString(),
       path: request.url,
@@ -84,7 +103,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       code: statusCode,
       message: message,
       data: null,
-      errors: errors ? [errors] : null,
+      errors: Array.isArray(errors) ? errors : errors ? [errors] : null,
     };
 
     response.status(statusCode).json(responseBody);

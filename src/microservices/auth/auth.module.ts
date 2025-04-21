@@ -2,7 +2,7 @@ import { Global, Logger, Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { AUTH_PACKAGE_NAME, AUTH_SERVICE_NAME } from './auth.pb';
+import { AUTH_PACKAGE_NAME, AUTH_SERVICE_NAME } from './protos/auth.pb';
 import { ConfigService } from '@nestjs/config';
 import { InterceptingCall } from '@grpc/grpc-js';
 import { GrpcLoggingInterceptor } from 'src/interceptors/grpc-logging.interceptor';
@@ -27,7 +27,7 @@ import { GrpcLoggingInterceptor } from 'src/interceptors/grpc-logging.intercepto
                     configService.get<string[]>('logger.redact.fields') || [];
                   const path: string = options.method_definition.path;
 
-                  logger.verbose('----------- GRPC CALL ------------');
+                  logger.verbose('-- GRPC CALL --');
 
                   const interceptingCall = new InterceptingCall(
                     nextCall(options),

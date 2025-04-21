@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { UserController } from './user.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { USER_PACKAGE_NAME, USER_SERVICE_NAME } from './user.pb';
+import { USER_PACKAGE_NAME, USER_SERVICE_NAME } from './protos/user.pb';
 import { join } from 'path';
 
 @Module({

@@ -5,17 +5,26 @@ import {
   OnModuleInit,
   UseGuards,
   Req,
+  Body,
+  Get,
+  Query,
+  Param,
 } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
-import { Observable } from 'rxjs';
+import { firstValueFrom, Observable } from 'rxjs';
 import {
-  CreateOrderResponse,
   OrderServiceClient,
   ORDER_SERVICE_NAME,
-  CreateOrderRequest,
-} from './order.pb';
+  CreateRequest,
+} from './protos/order.pb';
 import { RequestWithUser } from 'src/types';
 import { JwtAccessTokenGuard } from '../auth/guards/jwt-access.guard';
+import { CreateOrderRequestDto } from './dtos/create-order.request.dto';
+import { Empty } from './protos/google/protobuf/empty.pb';
+import { FindManyOrderResponseDto } from './dtos/find-many-orders.response.dto';
+import { query } from 'express';
+import { FindManyOrderRequestDto } from './dtos/find-many-orders.request.dto';
+import { OrderResponseDto } from './dtos/order.response.dto';
 
 @Controller('order')
 export class OrderController implements OnModuleInit {
@@ -30,12 +39,43 @@ export class OrderController implements OnModuleInit {
 
   @Post()
   @UseGuards(JwtAccessTokenGuard)
-  private async createOrder(
+  private createOrder(
     @Req() req: RequestWithUser,
-  ): Promise<Observable<CreateOrderResponse>> {
-    const body: CreateOrderRequest = req.body;
+    @Body() body: CreateOrderRequestDto,
+  ): Observable<Empty> {
+    const { id: userId } = req.user;
 
-    body.userId = req.user.id;
-    return this.svc.createOrder(body);
+    return this.svc.createOrder({
+      productId: body.productId,
+      quantity: body.quantity,
+      userId,
+    });
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAccessTokenGuard)
+  private async findById(
+    @Req() req: RequestWithUser,
+    @Param('id') id: string,
+  ): Promise<OrderResponseDto> {
+    const res = await firstValueFrom(this.svc.findOne({ id }));
+    return new OrderResponseDto(res.order);
+  }
+
+  @Get()
+  @UseGuards(JwtAccessTokenGuard)
+  private async findMany(
+    @Req() req: RequestWithUser,
+    @Query() query: FindManyOrderRequestDto,
+  ): Promise<FindManyOrderResponseDto> {
+    const { id: userId } = req.user;
+
+    const res = await firstValueFrom(
+      this.svc.findMany({
+        userId,
+        status: query.status,
+      }),
+    );
+    return new FindManyOrderResponseDto(res.orders);
   }
 }

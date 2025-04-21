@@ -1,54 +1,88 @@
-import {
-  Body,
-  Controller,
-  Inject,
-  OnModuleInit,
-  Post,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Inject, Post, Req, UseGuards } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
-import { firstValueFrom, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 import { RequestWithUser } from 'src/types';
+import { ForgotPasswordRequestDto } from './dtos/forgot-password.request.dto';
+import { LoginRequestDto } from './dtos/login.request.dto';
+import { RefreshTokenRequestDto } from './dtos/refresh-token.request.dto';
+import { RegisterRequestDto } from './dtos/register.request.dto';
+import { SendVerificationEmailRequestDto } from './dtos/send-verification-email.request.dto';
+import { JwtAccessTokenGuard } from './guards/jwt-access.guard';
 import {
   AUTH_SERVICE_NAME,
   AuthServiceClient,
-  LoginRequest,
   LoginResponse,
   RefreshTokenRequest,
   RefreshTokenResponse,
-  RegisterRequest,
-  RegisterResponse,
-} from './auth.pb';
-import { JwtAccessTokenGuard } from './guards/jwt-access.guard';
-import { AuthService } from './auth.service';
-import { LoginResponseDto, RefreshTokenResponseDto } from './dtos/response.dto';
+} from './protos/auth.pb';
+import { Empty } from './protos/google/protobuf/empty.pb';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  private svc: AuthServiceClient;
+
+  @Inject(AUTH_SERVICE_NAME)
+  private readonly client: ClientGrpc;
+
+  public onModuleInit(): void {
+    this.svc = this.client.getService<AuthServiceClient>(AUTH_SERVICE_NAME);
+  }
 
   @Post('register')
-  private async register(@Body() body: RegisterRequest): Promise<void> {
-    return await this.authService.register(body);
+  private register(@Body() body: RegisterRequestDto): Observable<Empty> {
+    return this.svc.register(body);
   }
 
   @Post('login')
-  private async login(@Body() body: LoginRequest): Promise<LoginResponseDto> {
-    return await this.authService.login(body);
+  private login(@Body() body: LoginRequestDto): Observable<LoginResponse> {
+    return this.svc.login(body);
   }
 
   @UseGuards(JwtAccessTokenGuard)
   @Post('refresh-token')
-  private async refreshToken(
+  private refreshToken(
     @Req() request: RequestWithUser,
-    @Body() body: { refreshToken: string },
-  ): Promise<RefreshTokenResponseDto> {
+    @Body() body: RefreshTokenRequestDto,
+  ): Observable<RefreshTokenResponse> {
     const userId = request.user.id;
     const req: RefreshTokenRequest = {
       refreshToken: body.refreshToken,
       userId,
     };
-    return this.authService.refreshToken(req);
+
+    return this.svc.refreshToken(req);
+  }
+
+  @UseGuards(JwtAccessTokenGuard)
+  @Post('reset-password')
+  private resetPassword(
+    @Req() request: RequestWithUser,
+    @Body() body: RefreshTokenRequestDto,
+  ): Observable<Empty> {
+    const userId = request.user.id;
+    const req: RefreshTokenRequest = {
+      refreshToken: body.refreshToken,
+      userId,
+    };
+
+    return this.svc.refreshToken(req);
+  }
+
+  @UseGuards(JwtAccessTokenGuard)
+  @Post('forgot-password')
+  private forgotPassword(
+    @Req() request: RequestWithUser,
+    @Body() body: ForgotPasswordRequestDto,
+  ): Observable<Empty> {
+    return this.svc.forgotPassword(body);
+  }
+
+  @UseGuards(JwtAccessTokenGuard)
+  @Post('send-verification-email')
+  private sendVerificationEmail(
+    @Req() request: RequestWithUser,
+    @Body() body: SendVerificationEmailRequestDto,
+  ): Observable<Empty> {
+    return this.svc.sendVerificationEmail(body);
   }
 }

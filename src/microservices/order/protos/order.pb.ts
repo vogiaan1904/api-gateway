@@ -7,57 +7,76 @@
 /* eslint-disable */
 import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
 import { Observable } from "rxjs";
+import { Empty } from "./google/protobuf/empty.pb";
 
 export const protobufPackage = "order";
 
+export enum OrderStatus {
+  DEFAULT = 0,
+  PROCESSING = 1,
+  COMPLETED = 2,
+  CANCELLED = 3,
+  PENDING = 4,
+  UNRECOGNIZED = -1,
+}
+
 export interface OrderData {
   id: string;
-  productId: number;
+  productId: string;
+  productName: string;
+  productPrice: number;
+  quantity: number;
+  totalAmount: number;
+  userId: string;
+  status: OrderStatus;
+}
+
+export interface CreateRequest {
+  productId: string;
   quantity: number;
   userId: string;
 }
 
-export interface CreateOrderRequest {
-  productId: number;
-  quantity: number;
-  userId: string;
-}
-
-export interface CreateOrderResponse {
-  status: number;
-  error: string[];
-  id: string;
-}
-
+/** FindOne */
 export interface FindOneRequest {
   id: string;
 }
 
 export interface FindOneResponse {
-  status: number;
-  error: string[];
-  data: OrderData | undefined;
+  order: OrderData | undefined;
+}
+
+/** FindMany */
+export interface FindManyRequest {
+  userId: string;
+  status: OrderStatus;
+}
+
+export interface FindManyResponse {
+  orders: OrderData[];
 }
 
 export const ORDER_PACKAGE_NAME = "order";
 
 export interface OrderServiceClient {
-  createOrder(request: CreateOrderRequest): Observable<CreateOrderResponse>;
+  createOrder(request: CreateRequest): Observable<Empty>;
 
   findOne(request: FindOneRequest): Observable<FindOneResponse>;
+
+  findMany(request: FindManyRequest): Observable<FindManyResponse>;
 }
 
 export interface OrderServiceController {
-  createOrder(
-    request: CreateOrderRequest,
-  ): Promise<CreateOrderResponse> | Observable<CreateOrderResponse> | CreateOrderResponse;
+  createOrder(request: CreateRequest): void;
 
   findOne(request: FindOneRequest): Promise<FindOneResponse> | Observable<FindOneResponse> | FindOneResponse;
+
+  findMany(request: FindManyRequest): Promise<FindManyResponse> | Observable<FindManyResponse> | FindManyResponse;
 }
 
 export function OrderServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["createOrder", "findOne"];
+    const grpcMethods: string[] = ["createOrder", "findOne", "findMany"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("OrderService", method)(constructor.prototype[method], method, descriptor);

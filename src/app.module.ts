@@ -11,7 +11,6 @@ import loggingConfig from './configs/logging.config';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { TransformInterceptor } from './interceptors/api-response.interceptor';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
-import { ErrorModule } from './errors/errors.module';
 
 @Module({
   imports: [
@@ -27,7 +26,6 @@ import { ErrorModule } from './errors/errors.module';
     ProductModule,
     OrderModule,
     UserModule,
-    ErrorModule,
   ],
   controllers: [AppController],
   providers: [
