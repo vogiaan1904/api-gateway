@@ -31,6 +31,7 @@ export interface OrderData {
   status: OrderStatus;
 }
 
+/** Create */
 export interface CreateRequest {
   productId: string;
   quantity: number;
@@ -59,7 +60,7 @@ export interface FindManyResponse {
 export const ORDER_PACKAGE_NAME = "order";
 
 export interface OrderServiceClient {
-  createOrder(request: CreateRequest): Observable<Empty>;
+  create(request: CreateRequest): Observable<Empty>;
 
   findOne(request: FindOneRequest): Observable<FindOneResponse>;
 
@@ -67,7 +68,7 @@ export interface OrderServiceClient {
 }
 
 export interface OrderServiceController {
-  createOrder(request: CreateRequest): void;
+  create(request: CreateRequest): void;
 
   findOne(request: FindOneRequest): Promise<FindOneResponse> | Observable<FindOneResponse> | FindOneResponse;
 
@@ -76,7 +77,7 @@ export interface OrderServiceController {
 
 export function OrderServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["createOrder", "findOne", "findMany"];
+    const grpcMethods: string[] = ["create", "findOne", "findMany"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("OrderService", method)(constructor.prototype[method], method, descriptor);

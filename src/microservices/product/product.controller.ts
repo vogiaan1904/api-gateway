@@ -1,30 +1,28 @@
 import {
+  Body,
   Controller,
   Get,
   Inject,
   OnModuleInit,
   Param,
-  ParseIntPipe,
-  UseGuards,
   Post,
-  Body,
   Query,
+  Sse,
+  UseGuards,
 } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom, Observable } from 'rxjs';
-import {
-  ProductServiceClient,
-  PRODUCT_SERVICE_NAME,
-  CreateProductRequest,
-  FindByIdResponse,
-  FindManyResponse,
-} from './protos/product.pb';
+import { map } from 'rxjs/operators';
 import { JwtAccessTokenGuard } from '../auth/guards/jwt-access.guard';
-import { Empty } from './protos/google/protobuf/empty.pb';
 import { CreateProductRequestDto } from './dtos/create-product.request.dto';
+import { FindManyProductResponseDto } from './dtos/find-many-product.response.dto';
 import { FindManyProductRequestDto } from './dtos/find-many-products.request.dto';
 import { ProductResponseDto } from './dtos/product.response.dto';
-import { FindManyProductResponseDto } from './dtos/find-many-product.response.dto';
+import { Empty } from './protos/google/protobuf/empty.pb';
+import {
+  PRODUCT_SERVICE_NAME,
+  ProductServiceClient,
+} from './protos/product.pb';
 
 @Controller('product')
 export class ProductController implements OnModuleInit {
@@ -44,6 +42,24 @@ export class ProductController implements OnModuleInit {
     @Body() body: CreateProductRequestDto,
   ): Observable<Empty> {
     return this.svc.createProduct(body);
+  }
+
+  @Sse('stream-demo')
+  streamProducts(): Observable<{ data: any }> {
+    const empty = {};
+
+    try {
+      const stream = this.svc.list(empty);
+      return stream.pipe(
+        map((product) => {
+          return {
+            data: new ProductResponseDto(product),
+          };
+        }),
+      );
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Get(':id')

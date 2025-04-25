@@ -45,7 +45,7 @@ export class OrderController implements OnModuleInit {
   ): Observable<Empty> {
     const { id: userId } = req.user;
 
-    return this.svc.createOrder({
+    return this.svc.create({
       productId: body.productId,
       quantity: body.quantity,
       userId,
